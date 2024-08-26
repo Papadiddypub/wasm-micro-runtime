@@ -2932,6 +2932,28 @@ wasm_set_exception(WASMModuleInstance *module_inst, const char *exception)
 #endif
 }
 
+
+// ReE
+void
+wasm_set_excnref(WASMModuleInstance *module_inst, int32_t exception_tag_index, void * excnref_tagdata) {
+    printf("set_excnref %d\n", exception_tag_index);
+    if (IS_INVALID_TAGINDEX(exception_tag_index)) {
+        // reset trap
+        wasm_set_exception(module_inst, NULL);
+        // clear excnref
+        module_inst->reserved[0] = 0;
+    } else {
+        // set excnref
+        module_inst->reserved[0] = 1; 
+        module_inst->e->common.excnref_tagindex = exception_tag_index;
+        module_inst->e->common.excnref_tagdata = excnref_tagdata;
+        // set trap
+        wasm_set_exception(module_inst, "uncaught wasm exception");
+    }
+
+
+}
+
 /* clang-format off */
 static const char *exception_msgs[] = {
     "unreachable",                    /* EXCE_UNREACHABLE */
@@ -3011,6 +3033,45 @@ wasm_copy_exception(WASMModuleInstance *module_inst, char *exception_buf)
     exception_unlock(module_inst);
 
     return has_exception;
+}
+
+
+// ReE
+bool 
+wasm_exception_is_excnref(WASMModuleInstance *module_inst) {
+    bool is_excnref = false;
+    if (module_inst->reserved[0] != 0) {
+        is_excnref = true;
+    }
+    return is_excnref;
+}
+bool
+wasm_runtime_exception_is_excnref(WASMModuleInstanceCommon *module_inst_comm)
+{
+    WASMModuleInstance *module_inst = (WASMModuleInstance *)module_inst_comm;
+
+    bh_assert(module_inst_comm->module_type == Wasm_Module_Bytecode
+              || module_inst_comm->module_type == Wasm_Module_AoT);
+    return wasm_exception_is_excnref(module_inst);
+}
+bool 
+wasm_exception_get_excnref(WASMModuleInstance *module_inst, uint32_t * excnref_tagindex, void ** excnref_tagdata) {
+    bool is_excnref = false;
+    if (module_inst->reserved[0] != 0) {
+        is_excnref = true;
+        *excnref_tagindex = module_inst->e->common.excnref_tagindex;
+        *excnref_tagdata = module_inst->e->common.excnref_tagdata;
+    }
+    return is_excnref;
+}
+bool
+wasm_runtime_exception_get_excnref(WASMModuleInstanceCommon *module_inst_comm, uint32_t * excnref_tagindex, void ** excnref_tagdata)
+{
+    WASMModuleInstance *module_inst = (WASMModuleInstance *)module_inst_comm;
+
+    bh_assert(module_inst_comm->module_type == Wasm_Module_Bytecode
+              || module_inst_comm->module_type == Wasm_Module_AoT);
+    return wasm_exception_get_excnref(module_inst, excnref_tagindex, excnref_tagdata);
 }
 
 void

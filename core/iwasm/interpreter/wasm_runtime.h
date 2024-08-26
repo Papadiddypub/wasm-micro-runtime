@@ -315,6 +315,12 @@ typedef struct WASMModuleInstanceExtraCommon {
     /* The gc heap created */
     void *gc_heap_handle;
 #endif
+
+    // ReE
+    // contains additional info if get_exception != NULL, indicating trap or sxcnref
+    // and instance->reserved[0] == 1, indicating that an excnref has returned
+    uint32_t excnref_tagindex;
+    void * excnref_tagdata;
 } WASMModuleInstanceExtraCommon;
 
 /* Extra info of WASM module instance for interpreter/jit mode */
@@ -430,6 +436,8 @@ struct WASMModuleInstance {
 
     /* Default WASM operand stack size */
     uint32 default_wasm_stack_size;
+
+    // ReE reserved[0] is treated as inidcation, if a function call returned an trap (=0) or an ecxnref (=1)
     uint32 reserved[7];
 
     /*
@@ -578,6 +586,15 @@ wasm_get_exception(WASMModuleInstance *module);
  */
 bool
 wasm_copy_exception(WASMModuleInstance *module_inst, char *exception_buf);
+
+
+// ReE
+// check, wether the trap is an excnref proposal exception
+bool 
+wasm_exception_is_excnref(WASMModuleInstance *module_inst);
+// call instead of wasm_set_exceptionm (trap) to indicate excnref proposal exception
+void
+wasm_set_excnref(WASMModuleInstance *module_inst, int32_t exception_tag_index, void * excnref_tagdata);
 
 uint64
 wasm_module_malloc_internal(WASMModuleInstance *module_inst,

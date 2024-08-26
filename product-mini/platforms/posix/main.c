@@ -204,8 +204,21 @@ app_instance_repl(wasm_module_inst_t module_inst)
             const char *exception;
             wasm_application_execute_func(module_inst, app_argv[0],
                                           app_argc - 1, app_argv + 1);
-            if ((exception = wasm_runtime_get_exception(module_inst)))
-                printf("%s\n", exception);
+            if ((exception = wasm_runtime_get_exception(module_inst))) {
+                // printf("ReE02 %s\n", exception);
+                // ReE
+                if (wasm_runtime_exception_is_excnref(module_inst)) {
+                    printf("ReE02 excnref %s\n", exception);
+                    uint32_t excnref_tagindex;
+                    void * excnref_tagdata;
+                    wasm_runtime_exception_get_excnref(module_inst, &excnref_tagindex, &excnref_tagdata);
+                    printf("excnref tagindex %d, data %p\n", excnref_tagindex, excnref_tagdata);
+
+                    //wasm_lookup_tag(module_inst, "foo");
+                } else {
+                    printf("ReE03 trap %s\n", exception);
+                }
+            }
         }
         free(app_argv);
     }
@@ -952,7 +965,7 @@ main(int argc, char *argv[])
             wasm_runtime_get_exec_env_singleton(wasm_module_inst);
         uint32_t debug_port;
         if (exec_env == NULL) {
-            printf("%s\n", wasm_runtime_get_exception(wasm_module_inst));
+            printf("ReE01 %s\n", wasm_runtime_get_exception(wasm_module_inst));
             goto fail4;
         }
         debug_port = wasm_runtime_start_debug_instance(exec_env);
@@ -1006,9 +1019,14 @@ main(int argc, char *argv[])
     }
 #endif
 
-    if (exception)
-        printf("%s\n", exception);
-
+    // ReE
+    if (exception) {
+        if (wasm_runtime_exception_is_excnref(wasm_module_inst)) {
+            printf("ReE03 excnref %s\n", exception);
+        } else {
+            printf("ReE03 trap %s\n", exception);
+        }
+    }
 #if WASM_ENABLE_STATIC_PGO != 0 && WASM_ENABLE_AOT != 0
     if (get_package_type(wasm_file_buf, wasm_file_size) == Wasm_Module_AoT
         && gen_prof_file)

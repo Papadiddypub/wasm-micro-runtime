@@ -1849,8 +1849,10 @@ wasm_interp_call_func_bytecode(WASMModuleInstance *module,
                             prev_frame->sp++;
 
                             /* mark frame as raised exception */
-                            wasm_set_exception(module,
-                                               "uncaught wasm exception");
+                            // wasm_set_exception(module,
+                            //                   "uncaught wasm exception");
+                            // ReE
+                            wasm_set_excnref(module, exception_tag_index, NULL);
 
                             /* end of function, treat as WASM_OP_RETURN */
                             goto return_func;

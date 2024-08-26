@@ -1097,6 +1097,13 @@ wasm_runtime_set_exception(wasm_module_inst_t module_inst,
 WASM_RUNTIME_API_EXTERN void
 wasm_runtime_clear_exception(wasm_module_inst_t module_inst);
 
+
+// ReE 
+WASM_RUNTIME_API_EXTERN bool 
+wasm_runtime_exception_is_excnref(wasm_module_inst_t module_inst);
+
+
+
 /**
  * Terminate the WASM module instance.
  *
